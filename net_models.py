@@ -4,6 +4,8 @@ import torch.nn.functional as F
 
 # UNet code is from https://github.com/milesial/Pytorch-UNet/blob/master/unet/unet_parts.py
 
+# Part of code (positional encoding part) is from https://github.com/diolatzis/active-exploration
+
 # Shared Components
 
 class DoubleConv(nn.Module):
@@ -112,13 +114,13 @@ class ThreeWayUNet(nn.Module):
 # TNet and RNet
 
 class TNet(nn.Module):
-    def __init__(self, in_channel, hidden=32):
+    def __init__(self, in_channel, hidden=32, out_hidden=16):
         super(TNet, self).__init__()
         self.tnet_f = TNetBackBone(in_channel, hidden)
-        self.tnet_b = TNetBackBone(hidden, 16)
+        self.tnet_b = TNetBackBone(hidden, out_hidden)
 
     def forward(self, g, rx):
-        result = torch.zeros((g.size(0), self.hidden, g.size(-2), g.size(-1)), device=g.device)
+        result = torch.zeros((g.size(0), self.tnet_f[0].out_channels, g.size(-2), g.size(-1)), device=g.device)
         for i in range(g.shape[1]):
             result += self.tnet_f(torch.cat([rx, g[:, i, ...]], 1))
         return self.tnet_b(result)
@@ -137,6 +139,33 @@ class RNet(nn.Module):
         x = self.layer1(x)
         x = self.layer2(x)
         return self.layer3(x)
+
+
+# CNet Class
+
+class CNet(nn.Module):
+    def __init__(self, n_oi, hidden_unet=8, hidden_tnet=32):
+        super(CNet, self).__init__()
+        self.inner_pos = fc_layer(in_features=3, out_features=16)
+        self.unet = UNet(37, hidden_unet)
+        self.tnet = TNet(hidden_unet + 17, hidden=hidden_tnet)
+        self.r_unet = ThreeWayUNet(hidden_unet + hidden_tnet, n_oi)
+        self.rnet_uv = RNet(2, 2)
+        self.rnet_normal = RNet(3, 3)
+
+    def forward(self, x, g):
+        position = x[:, :3, :, :]
+        position = torch.moveaxis(position, 1, 3)
+        
+        pe = self.inner_pos(position)
+        pe = torch.moveaxis(pe, 3, 1)
+        x = torch.cat([x, pe], 1)
+        rx = self.unet(x)
+        tx = self.tnet(g, rx)
+        rtx = torch.cat([rx, tx], 1)
+        normal, oi, uv = self.r_unet(rtx)
+        uv, normal = self.rnet_uv(uv), self.rnet_normal(normal)
+        return normal, oi, uv
 
 
 # Full Models
@@ -162,9 +191,9 @@ class CrystalRenderer(nn.Module):
 
 
 class CrystalNet(nn.Module):
-    def __init__(self, n_oi):
+    def __init__(self, n_oi, hidden_unet=8, hidden_tnet=32):
         super(CrystalNet, self).__init__()
-        self.cnet = CNet(n_oi)
+        self.cnet = CNet(n_oi, hidden_unet=hidden_unet, hidden_tnet=hidden_tnet)
 
     def forward(self, x, g):
         return self.cnet(x, g)
@@ -174,4 +203,3 @@ class CrystalNet(nn.Module):
 
 def fc_layer(in_features, out_features):
     return nn.Sequential(nn.Linear(in_features, out_features), nn.LeakyReLU(inplace=True))
-
