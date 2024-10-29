@@ -36,7 +36,7 @@ pip install -r requirements.txt
 ```
 
 ### Dependencies
-- Python 3.8+
+- Python 3.10+
 - PyTorch
 - torchvision
 - numpy
