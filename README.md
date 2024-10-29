@@ -27,7 +27,7 @@ neural rendering approaches.
 
 ## Installation
 
-CrystalNet requires Python 3.8+ along with several dependencies, which can be installed as follows:
+CrystalNet requires Python 3.10+ along with several dependencies, which can be installed as follows:
 
 ```bash
 git clone https://github.com/ziyangz5/CrystalNet.git
