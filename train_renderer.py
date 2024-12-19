@@ -2,20 +2,21 @@ import time
 import numpy as np
 import torch
 from torch.utils.data import DataLoader, TensorDataset
+import torch.optim.lr_scheduler
 import argparse
 import logging
 from sklearn.model_selection import train_test_split
-from ext import pytorch_ssim
 from utils import DssimL1Loss, save_checkpoint, load_checkpoint
-from net_models import CrystalRenderer
-import torch.optim.lr_scheduler
+from net_models_renderer import CrystalRenderer
+
 
 def load_data(ds_name, batch_size, res=256, test_size=0.03, random_seed=42):
     """Loads and splits the dataset into train and validation sets."""
     # Load data
-    Xnpz = np.load(f"./datasets/{ds_name}/{ds_name}_X_{res}.npz")
-    Gnpz = np.load(f"./datasets/{ds_name}/{ds_name}_Xg_{res}.npz")
-    Ynpz = np.load(f"./datasets/{ds_name}/{ds_name}_Y_{res}.npz")
+    Xnpz = np.load(f"./datasets/{ds_name}/{ds_name}_X_{res}_test.npz")
+    Gnpz = np.load(f"./datasets/{ds_name}/{ds_name}_Xg_{res}_test.npz")
+    Ynpz = np.load(f"./datasets/{ds_name}/{ds_name}_Y_{res}_test.npz")
+    Rnpz = np.load(f"./datasets/{ds_name}/{ds_name}_RInfo_{res}_test.npz")
     
     # Preprocess and combine data
     Xnp = np.rollaxis(Xnpz["X"], 3, 1)
@@ -23,7 +24,10 @@ def load_data(ds_name, batch_size, res=256, test_size=0.03, random_seed=42):
     Ynp = np.rollaxis(Ynpz["Y"], 3, 1) / 255
     mask = np.expand_dims(np.clip(np.round(np.sum(np.abs(Gnp[:, :, 8, :, :]), axis=1)), 0, 1), axis=1)
     Xnp = np.concatenate((Xnp, mask), axis=1)
-    
+    RTexnp = np.rollaxis(Rnpz["RTex"], 3, 1) * mask
+    RNnp = np.rollaxis(Rnpz["N"], 3, 1) * mask
+    Xnp = np.concatenate((Xnp,RTexnp,RNnp),axis=1)
+    print("Xnp combined with Rnp")
     # Train-validation split
     X_train, X_val, G_train, G_val, Y_train, Y_val = train_test_split(Xnp, Gnp, Ynp, test_size=test_size, random_state=random_seed)
     

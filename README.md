@@ -52,7 +52,7 @@ For dataset generation, please refer to [suzuran-renderer](https://github.com/zi
 ### 1. Refraction Buffer Generator Training
 To train the R-buffer generator, which predicts UV coordinates and object indices, run:
 ```bash
-python train_refraction_buffer_generator.py --scene_name {NAME} --single_batch_size {SIZE} --num_epochs {EPOCHS}
+python train_refraction_buffer_generator.py --scene_name {NAME} --single_batch_size {SIZE} --num_epochs {EPOCHS} --num_idx {NUM_OF_OBJECTS}
 ```
 
 ### 2. Neural Renderer Training

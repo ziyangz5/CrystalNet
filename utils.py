@@ -1,6 +1,7 @@
 import os
 import torch
 import torch.nn as nn
+from ext import pytorch_ssim
 
 def save_checkpoint(state, checkpoint_dir="checkpoints", filename="model_checkpoint.pth"):
     """Saves the model and optimizer states at a given checkpoint."""
@@ -28,6 +29,18 @@ def tv_loss(img, tv_weight):
     return tv_weight * (((img[:, :, :, :-1] - img[:, :, :, 1:]) ** 2).sum()
                         + ((img[:, :, :-1, :] - img[:, :, 1:, :]) ** 2).sum())
 
+class DssimL1Loss(torch.nn.Module):
+
+    def __init__(self,weight_L1=2.0):
+        super(DssimL1Loss, self).__init__()
+        self.loss_map = torch.zeros([0])
+        self.weight_L1 = weight_L1
+
+    def forward(self, pred, gt):
+        self.loss_map = self.weight_L1 * torch.abs(pred-gt) + (1.0 - pytorch_ssim.ssim(pred, gt, size_average=False))
+
+        return self.loss_map.mean()
+
 class DL1Combine(torch.nn.Module):
     """Custom loss combining cross-entropy and L1 losses."""
     def __init__(self, weight_L1=2.0):
@@ -37,3 +50,4 @@ class DL1Combine(torch.nn.Module):
 
     def forward(self, pred_sn, pred_oi, pred_uv, sn, oi, uv):
         return self.cls(pred_oi, oi) + self.rec(pred_uv, uv) * 5.0 + self.rec(pred_sn, sn) * 2.0
+

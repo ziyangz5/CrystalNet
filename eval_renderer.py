@@ -1,16 +1,17 @@
 import torch
+import numpy as np
 import argparse
 import logging
 from torch.utils.data import DataLoader, TensorDataset
 from utils import DssimL1Loss, load_checkpoint
-from net_models import CrystalRenderer
+from net_models_renderer import CrystalRenderer
 
 def load_data(ds_name, batch_size, res=256):
     """Load validation data for evaluation."""
     # Load data
-    Xnpz = np.load(f"./datasets/{ds_name}/{ds_name}_X_{res}.npz")
-    Gnpz = np.load(f"./datasets/{ds_name}/{ds_name}_Xg_{res}.npz")
-    Ynpz = np.load(f"./datasets/{ds_name}/{ds_name}_Y_{res}.npz")
+    Xnpz = np.load(f"./datasets/{ds_name}/{ds_name}_X_{res}_test.npz")
+    Gnpz = np.load(f"./datasets/{ds_name}/{ds_name}_Xg_{res}_test.npz")
+    Ynpz = np.load(f"./datasets/{ds_name}/{ds_name}_Y_{res}_test.npz")
     
     # Preprocess and combine data
     Xnp = np.rollaxis(Xnpz["X"], 3, 1)
