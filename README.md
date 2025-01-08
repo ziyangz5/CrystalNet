@@ -21,8 +21,6 @@ neural rendering approaches.
 - [Installation](#installation)
 - [Training](#training)
 - [Evaluation](#evaluation)
-- [Project Structure](#project-structure)
-- [Acknowledgements](#acknowledgements)
 - [Citation](#citation)
 
 ## Installation
@@ -46,6 +44,7 @@ pip install -r requirements.txt
 ## Datasets
 
 For dataset generation, please refer to [suzuran-renderer](https://github.com/ziyangz5/suzuran-renderer).
+Pre-rendered dataset: [cornellbox](https://drive.google.com/file/d/15F9HsmuGAf5y7gFnc5FNSqrhrt2qam6O/view?usp=sharing)
 
 ## Training
 
